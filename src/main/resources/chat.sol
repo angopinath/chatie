@@ -16,7 +16,7 @@ contract Chat {
   struct account {
     uint accountId;
     string name;
-    bytes32 password;
+    string password;
     uint[] friendsIds;
     mapping (uint => friendStatus) friends;
     mapping (uint => messageStatus) friendsMsgs;
@@ -40,21 +40,27 @@ contract Chat {
   mapping (uint => message) messages;
 
   //create new account
-  function createAccount(uint accountId,string name,bytes32 password) public {
-    uint[] memory friends=new uint[](2000);
-    accounts[accountId]=account(accountId,name,password,friends);
+  function createAccount(uint accountId,string name,string password) public {
+    uint[] memory friendsIds=new uint[](2000);
+    accounts[accountId] = account(accountId,name,password,friendsIds);
   }
 
   //authenticate
-  function authenticate(uint accountId,bytes32 password) public returns (bool) {
-    require(accounts[accountId].password==password);
-    return true;
+  function authenticate(uint accountId,string password) public constant returns (bool) {
+    string storage pass=string(accounts[accountId].password);
+    if(keccak256(pass) == keccak256(password)){
+        return true;
+    }else{
+        return false;
+    }
   }
 
   //searchAccount
-  function searchAccount(uint accountId) public returns (uint,string) {
-    if(bytes(accounts[accountId].name).length <0 ) throw;
-    return (accounts[accountId].accountId,accounts[accountId].name);
+  function searchAccount(uint accountId) public view returns (uint,string) {
+    var acc = accounts[accountId];
+    require(acc.accountId != 0,"no account found");
+    //return (accountId,"gopi");
+    return (acc.accountId,acc.name);
   }
 
   //send new friend request
@@ -72,10 +78,10 @@ contract Chat {
   }
 
   //send new messages
-  function sendMessage(uint senderId, uint receiverId, string msg) public {
+  function sendMessage(uint senderId, uint receiverId, string msg1) public {
     uint msgId = block.timestamp;
     uint timestamp = block.timestamp;
-    messages[msgId]=message(msgId,msg,false,timestamp,senderId,receiverId);
+    messages[msgId]=message(msgId,msg1,false,timestamp,senderId,receiverId);
     accounts[senderId].friendsMsgs[receiverId].msgIds.push(msgId);
     accounts[receiverId].friendsMsgs[senderId].msgIds.push(msgId);
   }
