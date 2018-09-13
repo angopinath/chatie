@@ -6,11 +6,12 @@ contract Chat {
   string private DELIMITER="|";
 
   enum friendStatus {
+    UNKNOWN,
+    REQUEST_SENT,
+    REQUEST_RECEIVED,
     ACCEPTED,
     REJECTED,
-    BLOCKED,
-    REQUEST_SENT,
-    REQUEST_RECEIVED
+    BLOCKED
   }
 
   struct account {
@@ -18,7 +19,7 @@ contract Chat {
     string name;
     string password;
     uint[] friendsIds;
-    mapping (uint => uint) friends;
+    mapping (uint => friendStatus) friends;
     mapping (uint => messageStatus) friendsMsgs;
   }
 
@@ -40,14 +41,14 @@ contract Chat {
   mapping (uint => message) messages;
 
   //create new account
-  function createAccount(uint accountId,string name,string password) public {
+  function createAccount(uint accountId,string memory name,string memory password) public {
     uint[] memory friendsIds=new uint[](0);
     account memory a = account(accountId,name,password,friendsIds);
     accounts[accountId] = a;
   }
 
   //authenticate
-  function authenticate(uint accountId,string password) public constant returns (bool) {
+  function authenticate(uint accountId,string memory password) public view returns (bool) {
     string storage pass=string(accounts[accountId].password);
     if(keccak256(pass) == keccak256(password)){
         return true;
@@ -57,27 +58,27 @@ contract Chat {
   }
 
   //searchAccount
-  function searchAccount(uint accountId) public view returns (uint,string) {
-    var acc = accounts[accountId];
+  function searchAccount(uint accountId) public view returns (uint,string memory) {
+    account memory acc = accounts[accountId];
     require(acc.accountId != 0,"no account found");
     //return (accountId,"gopi");
     return (acc.accountId,acc.name);
   }
 
-  function changeFriendStatus(uint myid,uint frdid,uint stat) internal{
+  function changeFriendStatus(uint myid,uint frdid,friendStatus stat) internal{
     accounts[myid].friends[frdid]=stat;
   }
   //send new friend request
   function sendFriendRequest(uint myAccountId,uint friendAccountId) public  {
-    changeFriendStatus(myAccountId,friendAccountId,3);
-    changeFriendStatus(friendAccountId,myAccountId,4);
+    changeFriendStatus(myAccountId,friendAccountId,friendStatus.REQUEST_SENT);
+    changeFriendStatus(friendAccountId,myAccountId,friendStatus.REQUEST_RECEIVED);
   }
 
   //accept friend request
   function acceptFriendRequest(uint myAccountId,uint friendAccountId) public {
 
-    changeFriendStatus(myAccountId,friendAccountId,0);
-    changeFriendStatus(friendAccountId,myAccountId,0);
+    changeFriendStatus(myAccountId,friendAccountId,friendStatus.ACCEPTED);
+    changeFriendStatus(friendAccountId,myAccountId,friendStatus.ACCEPTED);
 
     accounts[myAccountId].friendsIds.push(friendAccountId);
     accounts[friendAccountId].friendsIds.push(myAccountId);
@@ -87,7 +88,7 @@ contract Chat {
   }
 
   //send new messages
-  function sendMessage(uint senderId, uint receiverId, string msg1) public {
+  function sendMessage(uint senderId, uint receiverId, string memory msg1) public {
     uint msgId = block.number;
     uint timestamp = block.timestamp;
     messages[msgId]=message(msgId,msg1,false,timestamp,senderId,receiverId);
@@ -105,7 +106,7 @@ contract Chat {
   * sync messages
   * returns array of accountId|username|unreadmsg|status
   */
-  function syncMessages(uint myAccountId) public view returns (uint[],bytes32[],uint[],uint[]) {
+  function syncMessages(uint myAccountId) public view returns (uint[] memory,bytes32[] memory,uint[] memory,uint[] memory) {
 
     account memory acc = accounts[myAccountId];
     uint[] memory ids= new uint[](acc.friendsIds.length);
@@ -132,7 +133,7 @@ contract Chat {
   }
 
   //get messages
-  function getMessages(uint accountId,uint friendId) public view returns (bytes32[]) {
+  function getMessages(uint accountId,uint friendId) public view returns (bytes32[] memory) {
     uint[] memory msgIds = accounts[accountId].friendsMsgs[friendId].msgIds;
     uint startingMsgId = 0;
     if(msgIds.length>200){
@@ -156,7 +157,7 @@ contract Chat {
         }
   }
   //util- string concat
-  function strConcat(string s1,string s2) internal pure returns(string){
+  function strConcat(string memory s1,string memory s2) internal pure returns(string memory){
     bytes memory s1bytes=bytes(s1);
     bytes memory s2bytes=bytes(s2);
     bytes memory result=new bytes(s1bytes.length+s2bytes.length);
@@ -167,7 +168,7 @@ contract Chat {
     return string(result);
   }
   //util- uint to string
-  function uint2str(uint i) internal pure returns (string){
+  function uint2str(uint i) internal pure returns (string memory){
     if (i == 0) return "0";
     uint j = i;
     uint length;
@@ -190,14 +191,14 @@ contract Chat {
     return uint(accounts[senderid].friends[friendid]);
   }
 
-  function getMessageById(uint id) public view returns(string){
+  function getMessageById(uint id) public view returns(string memory){
       return messages[id].msg;
   }
 
   function getFriendsIds(uint myid) public view returns(uint){
       return accounts[myid].friendsIds[0];
   }
-  function getFriendMsgs(uint myid, uint frndid) public view returns(uint, uint[]){
+  function getFriendMsgs(uint myid, uint frndid) public view returns(uint, uint[] memory){
       return (accounts[myid].friendsMsgs[frndid].unreadCount, accounts[myid].friendsMsgs[frndid].msgIds);
   }
 }
