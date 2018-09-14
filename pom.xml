@@ -4,9 +4,14 @@
   <groupId>com.gm.chatie</groupId>
   <artifactId>chatie</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.1</version>
   <name>chatie</name>
-  <url>http://maven.apache.org</url>
+  <url>http://chatie.io</url>
+
+  <properties>
+    <jdk.version>1.8</jdk.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -14,5 +19,56 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.web3j</groupId>
+      <artifactId>core</artifactId>
+      <version>3.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okio</groupId>
+      <artifactId>okio</artifactId>
+      <version>1.13.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.web3j</groupId>
+      <artifactId>infura</artifactId>
+      <version>3.4.0</version>
+    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.7.0</version>
+        <configuration>
+          <source>${jdk.version}</source>
+          <target>${jdk.version}</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.web3j</groupId>
+        <artifactId>web3j-maven-plugin</artifactId>
+        <version>0.3.5</version>
+        <configuration>
+          <packageName>com.gm.chatie.solidity</packageName>
+          <sourceDestination>src/main/java</sourceDestination>
+          <nativeJavaType>true</nativeJavaType>
+          <soliditySourceFiles>
+            <directory>src/main/resources</directory>
+            <includes>
+              <include>**/*.sol</include>
+            </includes>
+          </soliditySourceFiles>
+          <outputDirectory>
+            <java>src/java/generated</java>
+            <bin>src/bin/generated</bin>
+            <abi>src/abi/generated</abi>
+          </outputDirectory>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>
